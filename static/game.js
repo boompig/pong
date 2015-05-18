@@ -4,57 +4,111 @@ Game.id = null;
 Game.socket = null;
 Game.myRandomNumber = null;
 Game.role = null;
+Game.borderWidth = 4;
+Game.borderColor = "#F7C76D";
+Game.counter = 0;
+Game.started = false;
 
-Game.paddles = {
-    left: {
-        pos: {
-            x: 0,
-            y: 0
-        },
-        speed: {
-            x: 0,
-            y: 0
-        }
-    },
-    right: {
-        pos: {
-            x: 0,
-            y: 0
-        },
-        speed: {
-            x: 0,
-            y: 0
-        }
-    }
+var Paddle = function (width, height) {
+    this.pos = { x: 0, y: 0 };
+    this.speed = { x: 0, y: 0 };
+    this.width = width;
+    this.height = height;
 };
 
-Game.ball = { x: 0, y: 0 };
-Game.ballRadius = 10;
-Game.paddleOffset = 10;
+var Ball = function (radius) {
+    this.pos = { x: 0, y: 0 };
+    this.speed = { x: 0, y: 0 };
+    this.radius = radius;
+};
+
+/**
+ * Going to be a rough approximation, assuming ball is square
+ */
+Ball.prototype.intersectsPaddle = function (paddle) {
+    return (!(this.pos.y + this.radius < paddle.pos.y || 
+        this.pos.y - this.radius > paddle.pos.y + paddle.height ||
+        this.pos.x + this.radius < paddle.pos.x ||
+        this.pos.x - this.radius > paddle.pos.x + paddle.width))
+};
+
 Game.paddleWidth = 10;
 Game.paddleHeight = 60;
-Game.ballSpeed = { x: 0, y: 0 };
+Game.paddles = {
+    left: new Paddle(Game.paddleWidth, Game.paddleHeight),
+    right: new Paddle(Game.paddleWidth, Game.paddleHeight)
+};
+
+Game.ballRadius = 10;
+Game.ball = new Ball(Game.ballRadius);
+
+Game.paddleOffset = 10;
 Game.initBallSpeed = { x: 3.5, y: 1.0 };
 Game.canvas = null;
 Game.context = null;
 Game.paddleSpeed = 3.5;
-Game.fps = 60;
+Game.fps = 40;
 Game.scores = {
     left: 0,
     right: 0
 };
 
 Game.checkHorizontalBoundaries = function () {
-    if (Game.ball.x + Game.ballRadius <= 0) {
+    if (Game.ball.pos.x + Game.ballRadius <= 0) {
         Game.scores.right++;
+        Game.drawScores();
         Game.reset();
-    } else if (Game.ball.x - Game.ballRadius >= Game.canvas.width) {
+    } else if (Game.ball.pos.x - Game.ballRadius >= Game.canvas.width) {
         Game.scores.left++;
+        Game.drawScores();
         Game.reset();
     }
 };
 
+Game.checkVerticalBoundaries = function (ball) {
+    if (ball.pos.y - ball.radius <= 0 || ball.pos.y + ball.radius >= Game.canvas.height) {
+        ball.speed.y *= -1;
+    }
+};
+
+//Game.receiveStateChange = function (data) {
+    //if (data.role !== Game.role && data.state === "reset") {
+        //Game.reset();
+    //}
+//};
+
+//Game.sendStateChange = function (stateChange) {
+    //var data = {
+        //room: String(Game.id),
+        //role: Game.role,
+        //state: stateChange
+    //};
+    //Game.socket.emit("GAME_STATE_CHANGE", data);
+//};
+
+Game.receiveMove = function (data) {
+    if (data.role !== Game.role) {
+        //console.log("Received move");
+        //console.log(data);
+        Game.movePaddle(data.role, data.direction);
+    }
+};
+
+Game.sendMove = function (paddleRole, direction) {
+    var data = {
+        room: String(Game.id),
+        role: paddleRole,
+        direction: direction
+    };
+    //console.log("Sending move");
+    //console.log(data);
+    Game.socket.emit("PLAYER_MOVE", data)
+};
+
 Game.movePaddle = function (role, dy) {
+    if (role === Game.role) {
+        Game.sendMove(role, dy);
+    }
     if (dy === +1) {
         Game.paddles[role].speed.y = Game.paddleSpeed;
     } else if (dy === -1) {
@@ -64,14 +118,30 @@ Game.movePaddle = function (role, dy) {
     }
 };
 
-Game.drawScores = function () {
-    $("#left").text(Game.scores.left);
-    $("#right").text(Game.scores.right);
+Game.highlightRole = function () {
+    $(".role").removeClass("selected-role");
+    $("#" + Game.role).addClass("selected-role");
 };
+
+Game.drawScores = function () {
+    $("#left-score").text(Game.scores.left);
+    $("#right-score").text(Game.scores.right);
+};
+
+//Game.drawGameCounter = function () {
+    //$("#game-counter").text(Game.counter);
+//};
+
+//Game.drawBallPos = function () {
+    //$("#ball-pos .x").text(Game.ball.pos.x);
+    //$("#ball-pos .y").text(Game.ball.pos.y);
+//};
 
 Game.drawFrame = function () {
     Game.drawBackground();
-    Game.drawScores();
+    //Game.drawBallPos();
+    //Game.drawGameCounter();
+    //Game.drawScores();
     Game.drawPaddles();
     Game.drawBall();
 };
@@ -80,7 +150,7 @@ Game.drawBall = function () {
     var context = Game.context;
     context.beginPath();
     context.fillStyle = "white";
-    context.arc(Game.ball.x, Game.ball.y, Game.ballRadius, 0, 2 * Math.PI, false);
+    context.arc(Game.ball.pos.x, Game.ball.pos.y, Game.ballRadius, 0, 2 * Math.PI, false);
     context.fill();
     context.closePath();
 };
@@ -97,14 +167,31 @@ Game.drawPaddles = function () {
 };
 
 Game.drawBackground = function () {
+    "use strict";
     var context = Game.context;
     context.fillStyle = "black";
     context.fillRect(0, 0, Game.canvas.width, Game.canvas.height);
+
+    context.beginPath();
+    context.strokeStyle = Game.borderColor;
+    context.lineWidth = Game.borderWidth;
+    context.moveTo(0, Game.borderWidth / 2);
+    context.lineTo(Game.canvas.width, Game.borderWidth / 2);
+    context.stroke();
+    context.closePath();
+
+    context.beginPath();
+    context.strokeStyle = Game.borderColor;
+    context.lineWidth = Game.borderWidth;
+    context.moveTo(0, Game.canvas.height - Game.borderWidth / 2);
+    context.lineTo(Game.canvas.width, Game.canvas.height - Game.borderWidth / 2);
+    context.stroke();
+    context.closePath();
 };
 
 Game.animateBall = function () {
-    Game.ball.x += Game.ballSpeed.x;
-    Game.ball.y += Game.ballSpeed.y;
+    Game.ball.pos.x += Game.ball.speed.x;
+    Game.ball.pos.y += Game.ball.speed.y;
 };
 
 Game.animatePaddles = function () {
@@ -117,12 +204,21 @@ Game.animatePaddles = function () {
 };
 
 Game.animateFrames = function () {
+    Game.started = true;
+    // first, set the next time to execute, then actually do execution
+    window.setTimeout(Game.animateFrames, 1000 / Game.fps);
+
     Game.checkHorizontalBoundaries();
+    Game.checkVerticalBoundaries(Game.ball);
+    if (Game.ball.intersectsPaddle(Game.paddles.left) ||
+        Game.ball.intersectsPaddle(Game.paddles.right)) {
+        Game.ball.speed.x *= -1;
+    }
 
     Game.animateBall();
     Game.animatePaddles();
     Game.drawFrame();
-    window.setTimeout(Game.animateFrames, 1000 / Game.fps);
+    Game.counter++;
 };
 
 Game.showMessage = function (data) {
@@ -140,12 +236,13 @@ Game.init = function () {
 };
 
 Game.reset = function () {
-    Game.ball.x = Game.canvas.width / 2;
-    Game.ball.y = Game.canvas.height / 2;
-    Game.ballSpeed = {
-        x: Game.initBallSpeed.x,
-        y: Game.initBallSpeed.y
-    };
+    Game.ball.pos.x = Game.canvas.width / 2;
+    Game.ball.pos.y = Game.canvas.height / 2;
+
+    Game.ball.speed.x = Game.initBallSpeed.x;
+    Game.ball.speed.y = Game.initBallSpeed.y;
+
+    Game.counter = 0;
 };
 
 $(function () {
@@ -160,7 +257,7 @@ $(function () {
         var data = {
             room: String(Game.id),
             player: Game.playerID,
-            randomNumber: Game.myRandomNumber
+            randomNumber: Game.myRandomNumber,
         };
         Game.socket.emit("PLAYER_ROLE", data);
         console.log("Sent random number " + Game.myRandomNumber);
@@ -170,7 +267,7 @@ $(function () {
         if (data.player === Game.playerID) {
             return;
         }
-        var rn = data["randomNumber"];
+        var rn = data.randomNumber;
         if (rn > Game.myRandomNumber) {
             Game.role = "left";
         } else if (rn < Game.myRandomNumber) {
@@ -178,8 +275,22 @@ $(function () {
         } else {
             console.log("Conflict!");
         }
-        alert("You are playing as player " + Game.role);
-        Game.animateFrames();
+
+        //alert("You are playing as player " + Game.role);
+        Game.highlightRole();
+        console.log("Restarting game");
+        Game.reset();
+        if (! Game.started) {
+            Game.animateFrames();
+        }
+    });
+
+    Game.socket.on("GAME_STATE_CHANGE", function (data) {
+        Game.receiveStateChange(data);
+    });
+
+    Game.socket.on("PLAYER_MOVE", function (data) {
+        Game.receiveMove(data);
     });
 
     // get the game ID

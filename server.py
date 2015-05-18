@@ -1,9 +1,15 @@
 from challenge import Challenge
 from flask import Flask, request, jsonify, redirect, url_for
+from flask.ext.socketio import SocketIO, send, emit, join_room, leave_room
 import random
 import time
 import threading
+
+########### create app ####################
 app = Flask(__name__, static_url_path="", static_folder="static")
+app.config["SECRET_KEY"] = "secret!"
+app.debug = True
+socketio = SocketIO(app)
 
 ############# app state ###############
 available_users = {
@@ -37,11 +43,46 @@ def get_challenge_id():
         n = random.randint(100, 1000)
     return n
 
-# app methods
+################################# socket stuff ############################
+
+games = {}
+
+@socketio.on("join")
+def on_join(data):
+    room = data["room"]
+    join_room(room)
+    print "someone joined room" + str(data["room"])
+    if room not in games:
+        games[room] = 1
+    else:
+        print "all players have joined in room " + room
+        emit("GAME_READY", "OK", room=room)
+
+
+@socketio.on("PLAYER_ROLE")
+def on_player_role(data):
+    room = data["room"]
+    emit("PLAYER_ROLE", data, room=room)
+    print "sending random number " + str(data["randomNumber"])
+
+@socketio.on("PLAYER_MOVE")
+def on_player_move(data):
+    room = data["room"]
+    emit("PLAYER_MOVE", data, room=room)
+
+@socketio.on("leave")
+def on_leave(data):
+    leave_room(data["room"])
+
+########################## app methods ##########################
 
 @app.route("/")
 def index():
     return redirect(url_for("html_register"))
+
+@app.route("/game/<int:gameID>", methods=["GET"])
+def html_game(gameID):
+    return app.send_static_file("game.html")
 
 @app.route("/register")
 def html_register():
@@ -179,4 +220,4 @@ def api_get_challenge_status(challengeID):
 
 if __name__ == "__main__":
     #check_keepalive_users()
-    app.run(debug=True)
+    socketio.run(app, host="0.0.0.0")

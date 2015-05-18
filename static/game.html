@@ -3,13 +3,21 @@
     <head>
         <meta charset="utf-8" />
         <title>Pong | Game</title>
+        <link rel="stylesheet" href="/game.css" />
     </head>
     <body>
         <h2>Game</h2>
 
+        <div id="ball-pos">
+            <span class="x"></span>
+            <span class="y"></span>
+        </div>
+
+        <div id="game-counter"></div>
+
         <div>
-            <span>Left: <span id="left">0</span></span>
-            <span>Right: <span id="right">0</span></span>
+            <span id="left" class="role">Left: <span id="left-score">0</span></span>
+            <span id="right" class="role">Right: <span id="right-score">0</span></span>
         </div>
         <canvas width="600px" height="400px" id="canvas"></canvas>
 
