@@ -58,7 +58,6 @@ def on_join(data):
         print "all players have joined in room " + room
         emit("GAME_READY", "OK", room=room)
 
-
 @socketio.on("PLAYER_ROLE")
 def on_player_role(data):
     room = data["room"]
@@ -67,8 +66,11 @@ def on_player_role(data):
 
 @socketio.on("PLAYER_MOVE")
 def on_player_move(data):
-    room = data["room"]
-    emit("PLAYER_MOVE", data, room=room)
+    emit("PLAYER_MOVE", data, room=data["room"])
+
+@socketio.on("GAME_STATE_CHANGE")
+def on_game_state_change(data):
+    emit("GAME_STATE_CHANGE", data, room=data["room"])
 
 @socketio.on("leave")
 def on_leave(data):
