@@ -1,0 +1,20 @@
+{
+  "name": "pong",
+  "version": "0.0.1",
+  "authors": [
+    "Daniel Kats <dbkats@cs.toronto.edu>"
+  ],
+  "license": "MIT",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "jquery": "~2.1.4",
+    "socket.io-client": "0.9.16"
+  }
+}
