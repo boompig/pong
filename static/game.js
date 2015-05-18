@@ -396,6 +396,7 @@ $(function () {
     // get the game ID
     var pieces = window.location.href.split("/");
     Game.id = pieces[pieces.length - 1];
+    $("#game-id").text(Game.id);
 
     Game.playerID = Math.floor(Math.random() * 1e6);
 

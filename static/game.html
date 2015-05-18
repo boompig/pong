@@ -6,20 +6,21 @@
         <link rel="stylesheet" href="/game.css" />
     </head>
     <body>
-        <h2>Game</h2>
+        <div id="main-container">
+            <h2 id="main-heading">Pong Game #<span id="game-id"></span></h2>
+            <div id="ball-pos">
+                <span class="x"></span>
+                <span class="y"></span>
+            </div>
 
-        <div id="ball-pos">
-            <span class="x"></span>
-            <span class="y"></span>
+            <div id="game-counter"></div>
+
+            <div id="score-container">
+                <span id="left" class="role">Left: <span id="left-score">0</span></span>
+                <span id="right" class="role">Right: <span id="right-score">0</span></span>
+            </div>
+            <canvas width="900px" height="600px" id="canvas"></canvas>
         </div>
-
-        <div id="game-counter"></div>
-
-        <div>
-            <span id="left" class="role">Left: <span id="left-score">0</span></span>
-            <span id="right" class="role">Right: <span id="right-score">0</span></span>
-        </div>
-        <canvas width="600px" height="500px" id="canvas"></canvas>
 
         <script src="/bower_components/jquery/dist/jquery.min.js"></script>
         <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/socket.io/0.9.16/socket.io.min.js"></script>
