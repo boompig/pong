@@ -33,6 +33,7 @@ Game.ballRadius = 10;
 Game.paddleOffset = 10;
 // speed in pixels per second
 Game.initBallSpeed = { x: 140.0, y: 70.0 };
+// rendered frames to screen per second
 Game.fps = 100;
 // speed in pixels per second
 Game.paddleSpeed = 150;
@@ -81,8 +82,10 @@ Game.checkHorizontalBoundaries = function () {
 };
 
 Game.checkVerticalBoundaries = function (ball) {
-    if (ball.pos.y - ball.radius <= 0 || ball.pos.y + ball.radius >= Game.canvas.height) {
-        ball.speed.y *= -1;
+    if (ball.pos.y - ball.radius <= 0) {
+        ball.speed.y = Math.abs(ball.speed.y);
+    } else if (ball.pos.y + ball.radius >= Game.canvas.height) {
+        ball.speed.y = -1 * Math.abs(ball.speed.y);
     }
 };
 
@@ -111,19 +114,24 @@ Game.sendStateChange = function (stateChange) {
 Game.receiveMove = function (data) {
     if (data.role !== Game.role) {
         Game.movePaddle(data.role, data.direction);
-        //Game.ball = data.ball;
-        //Game.paddles[data.role] = data.paddle;
+        if (data.direction === 0) {
+            // set the position as indicated
+            Game.paddles[data.role].pos = data.paddlePos;
+            console.log(data.paddlePos);
+        }
     }
 };
 
+/**
+ * Broadcast the move to opponent
+ */
 Game.sendMove = function (paddleRole, direction) {
     var data = {
         playerID: Game.playerID,
         room: String(Game.id),
         role: paddleRole,
         direction: direction,
-        ball: Game.ball,
-        paddle: Game.paddles[paddleRole]
+        paddlePos: Game.paddles[paddleRole].pos
     };
     Game.socket.emit("PLAYER_MOVE", data)
 };
@@ -230,6 +238,7 @@ Game.resume = function (sendMessage) {
         Game.sendStateChange("RESUME");
     }
     Game.started = true;
+    Game.lastDraw = new Date();
     Game.animateFrames();
 };
 
