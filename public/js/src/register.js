@@ -28,7 +28,7 @@ Register.setErrorMsg = function (msg) {
 
 Register.formSubmit = function (e) {
     e.preventDefault();
-    var username = $("#username").val();
+    const username = $("#username").val();
     Register.registerUsername(username);
     return false;
 };

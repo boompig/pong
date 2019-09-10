@@ -4,14 +4,14 @@
 
 const Game = {};
 
-var Paddle = function (width, height) {
+const Paddle = function (width, height) {
     this.pos = { x: 0, y: 0 };
     this.speed = { x: 0, y: 0 };
     this.width = width;
     this.height = height;
 };
 
-var Ball = function (radius) {
+const Ball = function (radius) {
     this.pos = { x: 0, y: 0 };
     this.speed = { x: 0, y: 0 };
     this.radius = radius;

@@ -7,7 +7,7 @@ waitingRoom.pollFreq = 6;
 
 waitingRoom.getChallengeStatus = function () {
     $.getJSON("/api/challenges/" + waitingRoom.challengeID, function (response) {
-        var challenge = response.challenge;
+        const challenge = response.challenge;
         if (challenge.status === "accepted") {
             window.location.href = "/game/" + waitingRoom.challengeID;
         } else if (challenge.status === "declined") {
