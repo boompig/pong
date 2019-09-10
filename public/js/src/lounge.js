@@ -32,14 +32,16 @@ const Lounge = new Vue({
         },
 
         fetchChallenges: function () {
+            console.log("fetching challenges")
             $.getJSON("/api/challenges", {"username": this.username})
                 .then((response) => {
                     this.challenges = response.challenges;
                     this.displayChallenges();
                 }).catch((response, textStatus, errorThrown) => {
                     if(response.responseJSON && response.responseJSON.error === "USERNAME_NOT_REGISTERED") {
-                        window.location.href = "/register?username=" + this.username;
+                        window.location.href = `/register?username=${this.username}`;
                     }
+                    this.errorMsg = "Failed to fetch challenges";
                     console.error("Failed to fetch challenges");
                     console.error(response);
                     console.error(textStatus);
@@ -51,7 +53,6 @@ const Lounge = new Vue({
 
         issueChallenge: function (opponent) {
             console.log("Issuing challenge to opponent " + opponent);
-            this.errorMsg = null;
             $.ajax({
                 url: "/api/challenges",
                 data: { "username": this.username, "opponent": opponent },
@@ -59,16 +60,18 @@ const Lounge = new Vue({
                 dataType: "json",
             }).then((response) => {
                 console.log(response);
-                const url = new URL(`/api/challenges/${response.id}`, window.location.origin);
+                const url = new URL(`/waitingRoom`, window.location.origin);
                 url.searchParams.set("username", this.username);
-                console.log(url);
-                // window.location.href = url.toString();
+                url.searchParams.set("challengeID", response.challengeID);
+                window.location.href = url.toString();
             }).catch((response, textStatus, errorThrown) => {
                 console.error(response);
                 console.error("status " + textStatus + " with error " + errorThrown);
                 console.error(response.responseJSON);
                 if(response.responseJSON && response.responseJSON.error) {
                     this.errorMsg = response.responseJSON.error;
+                } else {
+                    this.errorMsg = "failed to issue challenge";
                 }
             });
         },
@@ -87,19 +90,21 @@ const Lounge = new Vue({
                     const url = new URL(`/game/${challenge.id}`, window.location.origin);
                     url.searchParams.set("username", this.username);
                     window.location.href = url.toString();
+                    console.log(url);
                 }
             }).catch((response, textStatus, errorThrown) => {
-                console.log(response);
-                console.log("status " + textStatus + " with error " + errorThrown);
+                console.error(response);
+                console.error("status " + textStatus + " with error " + errorThrown);
+                this.errorMsg = "failed to respond to challenge";
             });
         },
 
         displayChallenges: function () {
             while (this.challenges.length > 0) {
                 const challenge = this.challenges.pop();
-                const response = confirm("Challenge has been issued by " + challenge.username + "." +
+                const accept = confirm("Challenge has been issued by " + challenge.sent_username + "." +
                         "Do you accept?");
-                if (response) {
+                if (accept) {
                     this.answerChallenge(challenge, true);
                     break;
                 } else {
@@ -126,9 +131,10 @@ const Lounge = new Vue({
                 if (response.responseJSON) {
                     const errorType = response.responseJSON.errorType;
                     if (errorType === "USERNAME_NOT_REGISTERED") {
+                        // this means for whatever reason the server cleaned up this username
                         window.location.href = `/register?username=${this.username}`;
-                        // console.error("username no longer registered");
-                        // this.errorMsg = "keepalive: username no longer registered";
+                        console.error("username no longer registered");
+                        this.errorMsg = "keepalive: username no longer registered";
                     }
                 }
             });
@@ -137,7 +143,8 @@ const Lounge = new Vue({
     created: function() {
         const args = parseArgs();
         if (!args.username) {
-            window.location.href = "/";
+            // username required
+            window.location.href = "/register";
         }
         this.username = args.username;
 

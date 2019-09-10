@@ -177,7 +177,10 @@ def api_post_challenge():
             challenge = Challenge(request.form["username"], opponent, time.time())
             challenges[challenge_id] = challenge
             code = 200
-            data = {"challengeID": challenge_id, "msg": "Successfully issued challenge to %s" % opponent}
+            data = {
+                "challengeID": challenge_id,
+                "msg": "Successfully issued challenge to %s" % opponent
+            }
     return jsonify(data), code
 
 @app.route("/api/challenges", methods=["GET"])
@@ -193,7 +196,11 @@ def api_get_challenges():
         username = request.args["username"]
         for challenge_id, challenge in challenges.items():
             if challenge.receive_username == username and challenge.status == "pending":
-                l.append({ "username": challenge.sent_username, "id": challenge_id })
+                l.append({
+                    "sent_username": challenge.sent_username,
+                    "id": challenge_id,
+                    "status": challenge.status
+                })
         data = {"challenges": l}
         code = 200
     return jsonify(data), code

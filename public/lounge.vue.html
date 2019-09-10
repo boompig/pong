@@ -16,10 +16,10 @@
             <p>Click on any username below to challenge them to a game</p>
 
             <ul id="user-container">
-                <p v-if="loggedInUsers.length === 0">
+                <p v-if="loggedInUsers.length === 1">
                     No one else is here...
                 </p>
-                <div v-if="loggedInUsers.length > 0">
+                <div v-if="loggedInUsers.length > 1">
                     <li class="opponent" v-for="user in loggedInUsers"
                         v-if="user !== username">
                         <a href="#" v-on:click="() => issueChallenge(user)">{{ user }}</a>
