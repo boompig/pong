@@ -1,6 +1,6 @@
 from challenge import Challenge
 from flask import Flask, request, jsonify, redirect, url_for
-from flask_socketio import SocketIO, send, emit, join_room, leave_room
+from flask_socketio import SocketIO, emit, join_room, leave_room
 import random
 import time
 import threading
