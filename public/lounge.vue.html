@@ -11,6 +11,8 @@
         <main id="root" v-cloak>
             <h2>Logged in as <span class="username">{{ username }}</span></h2>
 
+            <div class="error" v-if="errorMsg">{{ errorMsg }}</div>
+
             <p>Click on any username below to challenge them to a game</p>
 
             <ul id="user-container">

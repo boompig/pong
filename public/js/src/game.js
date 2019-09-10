@@ -2,8 +2,6 @@
 
 // NOTE: io is Socket.io
 
-const Game = {};
-
 const Paddle = function (width, height) {
     this.pos = { x: 0, y: 0 };
     this.speed = { x: 0, y: 0 };
@@ -28,48 +26,59 @@ Ball.prototype.intersectsPaddle = function (paddle) {
         this.pos.x - this.radius > paddle.pos.x + paddle.width));
 };
 
-/*********** CONSTANTS ********/
-Game.borderWidth = 4;
-Game.borderColor = "#F7C76D";
-Game.paddleWidth = 8;
-Game.paddleHeight = 60;
-Game.ballRadius = 10;
-Game.paddleOffset = 10;
-// speed in pixels per second
-Game.initBallSpeed = { x: 140.0, y: 70.0 };
-// rendered frames to screen per second
-Game.fps = 100;
-// speed in pixels per second
-Game.paddleSpeed = 150;
-// in milliseconds
-Game.minCollisionInterval = 500;
+const Game = {
+    /*********** CONSTANTS ********/
+    borderWidth: 4,
+    borderColor: "#F7C76D",
+    paddleWidth: 8,
+    paddleHeight: 60,
+    ballRadius: 10,
+    paddleOffset: 10,
+    // speed in pixels per second
+    initBallSpeed: { x: 140.0, y: 70.0 },
+    // rendered frames to screen per second
+    fps: 100,
+    // speed in pixels per second
+    paddleSpeed: 150,
+    // in milliseconds
+    minCollisionInterval: 500,
 
-/********************* TRANSPORT HELPER VARIABLES ***************/
-/* ID of the game, read from the URL */
-Game.id = null;
-/* a random number generated to be player identifier for role determination */
-Game.playerID = null;
-Game.socket = null;
-/* a random number generated to determine roles */
-Game.myRandomNumber = null;
+    /********************* TRANSPORT HELPER VARIABLES ***************/
+    /* ID of the game, read from the URL */
+    id: null,
 
-/********************* GRAPHICS HELPER VARIABLES ************/
-Game.canvas = null;
-Game.context = null;
-/************** GAME STATE *************/
-/* left or right */
-Game.role = null;
-Game.started = false;
-Game.scores = {
-    left: 0,
-    right: 0
+    /**
+     * Username of this player, read from the URL
+     */
+    username: null,
+
+    /* a random number generated to be player identifier for role determination */
+    playerID: null,
+
+    socket: null,
+
+    /* a random number generated to determine roles */
+    myRandomNumber: null,
+
+    /********************* GRAPHICS HELPER VARIABLES ************/
+    canvas: null,
+    context: null,
+
+    /************** GAME STATE *************/
+    /* left or right */
+    role: null,
+    started: false,
+    scores: {
+        left: 0,
+        right: 0
+    },
+    lastDraw: null,
+    paddles: {
+        left: new Paddle(Game.paddleWidth, Game.paddleHeight),
+        right: new Paddle(Game.paddleWidth, Game.paddleHeight)
+    },
+    ball: new Ball(Game.ballRadius),
 };
-Game.lastDraw = null;
-Game.paddles = {
-    left: new Paddle(Game.paddleWidth, Game.paddleHeight),
-    right: new Paddle(Game.paddleWidth, Game.paddleHeight)
-};
-Game.ball = new Ball(Game.ballRadius);
 
 /****************** GAME METHODS *************************/
 
@@ -375,11 +384,20 @@ Game.receivePlayerRoleMessage = function (data) {
 };
 
 $(function () {
+    // get the gameID first
+    const pieces = window.location.pathname.split(/\//g);
+    Game.id = pieces[pieces.length - 1];
+    $("#game-id").text(Game.id);
+
+    const url = new URL(window.location.href);
+    Game.username = url.searchParams.get("username");
+
     Game.socket = io.connect(window.location.origin);
     Game.socket.on("connect", function () {
         console.log("Connection established");
         Game.socket.emit("join", {
-            "room": String(Game.id)
+            "room": String(Game.id),
+            "username": Game.username
         });
     });
 
@@ -398,11 +416,6 @@ $(function () {
     Game.socket.on("PLAYER_MOVE", function (data) {
         Game.receiveMove(data);
     });
-
-    // get the game ID
-    var pieces = window.location.href.split("/");
-    Game.id = pieces[pieces.length - 1];
-    $("#game-id").text(Game.id);
 
     Game.playerID = Math.floor(Math.random() * 1e6);
 

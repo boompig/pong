@@ -6,7 +6,12 @@
 const Lounge = new Vue({
     el: "#root",
     data: {
+        /**
+         * Read from URL parameters
+         */
         username: null,
+
+        errorMsg: null,
 
         // in seconds
         keepaliveFreq: 5.0,
@@ -15,12 +20,11 @@ const Lounge = new Vue({
     },
     methods: {
         fetchUsers: function () {
-            console.log("Fetching list of logged-in users...");
             $.getJSON("/api/availableUsers")
                 .then((response) => {
                     this.loggedInUsers = response.users;
-                }).catch(function (response, textStatus, errorThrown) {
-                    console.log(response);
+                }).catch((response) => {
+                    console.error(response);
                 });
             window.setTimeout(() => {
                 this.fetchUsers();
@@ -28,7 +32,6 @@ const Lounge = new Vue({
         },
 
         fetchChallenges: function () {
-            console.log("Fetching challenges...");
             $.getJSON("/api/challenges", {"username": this.username})
                 .then((response) => {
                     this.challenges = response.challenges;
@@ -48,6 +51,7 @@ const Lounge = new Vue({
 
         issueChallenge: function (opponent) {
             console.log("Issuing challenge to opponent " + opponent);
+            this.errorMsg = null;
             $.ajax({
                 url: "/api/challenges",
                 data: { "username": this.username, "opponent": opponent },
@@ -57,13 +61,15 @@ const Lounge = new Vue({
                 console.log(response);
                 const url = new URL(`/api/challenges/${response.id}`, window.location.origin);
                 url.searchParams.set("username", this.username);
-                console.log(response);
                 console.log(url);
                 // window.location.href = url.toString();
-            }).catch(function (response, textStatus, errorThrown) {
+            }).catch((response, textStatus, errorThrown) => {
                 console.error(response);
                 console.error("status " + textStatus + " with error " + errorThrown);
                 console.error(response.responseJSON);
+                if(response.responseJSON && response.responseJSON.error) {
+                    this.errorMsg = response.responseJSON.error;
+                }
             });
         },
 
@@ -75,14 +81,14 @@ const Lounge = new Vue({
                 data: { "username": this.username, "opponent": this.username, "accept": accept },
                 method: "UPDATE",
                 dataType: "json",
-            }).then(function (response) {
+            }).then((response) => {
                 console.log(response);
                 if(accept) {
                     const url = new URL(`/game/${challenge.id}`, window.location.origin);
                     url.searchParams.set("username", this.username);
                     window.location.href = url.toString();
                 }
-            }).catch(function (response, textStatus, errorThrown) {
+            }).catch((response, textStatus, errorThrown) => {
                 console.log(response);
                 console.log("status " + textStatus + " with error " + errorThrown);
             });
@@ -111,18 +117,21 @@ const Lounge = new Vue({
                 data: { username: this.username },
                 method: "POST",
                 dataType: "json",
-            }).then(function (response) {
-                console.log(response);
-            }).catch(function (response, textStatus, errorThrown) {
+            }).then(() => {
+                // console.log(response);
+                window.setTimeout(this.sendKeepalive, this.keepaliveFreq * 1000);
+            }).catch((response) => {
+                console.error(response);
+                console.error(response.responseJSON);
                 if (response.responseJSON) {
                     const errorType = response.responseJSON.errorType;
                     if (errorType === "USERNAME_NOT_REGISTERED") {
-                        window.location.href = "/register";
+                        window.location.href = `/register?username=${this.username}`;
+                        // console.error("username no longer registered");
+                        // this.errorMsg = "keepalive: username no longer registered";
                     }
                 }
-                console.log(response.responseJSON);
             });
-            window.setTimeout(this.sendKeepalive, this.keepaliveFreq * 1000);
         }
     },
     created: function() {
@@ -130,11 +139,10 @@ const Lounge = new Vue({
         if (!args.username) {
             window.location.href = "/";
         }
-        console.log(`set username = ${args.username}`);
         this.username = args.username;
 
         this.fetchUsers();
         this.fetchChallenges();
-        //this.sendKeepalive();
+        this.sendKeepalive();
     }
 });

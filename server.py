@@ -4,11 +4,15 @@ from flask_socketio import SocketIO, send, emit, join_room, leave_room
 import random
 import time
 import threading
+import logging
+import coloredlogs
+
 
 ########### create app ####################
 app = Flask(__name__, static_url_path="", static_folder="public")
 app.config["SECRET_KEY"] = "secret!"
 app.config["PORT"] = 8080
+app.config["DEBUG"] = True
 app.debug = True
 socketio = SocketIO(app)
 
@@ -23,7 +27,7 @@ challenges = {
 timeout_period = 10.0
 
 def check_keepalive_users(timer=None):
-    print("Purging usernames")
+    logging.info("Running username cleanup")
     now = time.time()
     deleted_users = []
     for username, obj in available_users.items():
@@ -32,11 +36,12 @@ def check_keepalive_users(timer=None):
             deleted_users.append(username)
 
     for username in deleted_users:
-        print("Removing username " + username)
+        logging.warning("Removing username " + username)
         del available_users[username]
 
-    timer = threading.Timer(timeout_period, check_keepalive_users)
-    timer.start()
+    if timer is None:
+        timer = threading.Timer(timeout_period, check_keepalive_users)
+        timer.start()
 
 def get_challenge_id():
     n = random.randint(100, 1000)
@@ -51,8 +56,12 @@ games = {}
 @socketio.on("join")
 def on_join(data):
     room = data["room"]
+    username = data["username"]
     join_room(room)
-    print("someone joined room" + str(data["room"]))
+    print("{username} joined room {room}".format(
+        username=username,
+        room=room
+    ))
     if room not in games:
         games[room] = 1
     else:
@@ -223,6 +232,9 @@ def api_get_challenge_status(challengeID):
     return jsonify(data), code
 
 if __name__ == "__main__":
-    #check_keepalive_users()
+    if app.config["DEBUG"]:
+        logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+        coloredlogs.install(logging.INFO)
+    check_keepalive_users()
     print("Running on http://localhost:%s" % app.config["PORT"])
     socketio.run(app, host="0.0.0.0", port=app.config["PORT"])
