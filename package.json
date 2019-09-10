@@ -1,0 +1,17 @@
+{
+  "name": "pong",
+  "version": "1.0.0",
+  "main": "index.html",
+  "repository": "git@github.com:boompig/pong.git",
+  "author": "Daniel Kats <dbkats@cs.toronto.edu>",
+  "license": "MIT",
+  "private": true,
+  "devDependencies": {
+    "eslint": "^6.3.0",
+    "eslint-plugin-vue": "^5.2.3"
+  },
+  "scripts": {
+    "lint": "eslint public/js/src"
+  },
+  "dependencies": {}
+}

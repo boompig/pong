@@ -1,3 +1,9 @@
+# python
 *.pyc
-static/bower_components
-venv
+venv*
+
+# javascript
+node_modules
+
+# editor
+.vscode

@@ -1,4 +1,8 @@
-var Game = {};
+/* global $, io */
+
+// NOTE: io is Socket.io
+
+const Game = {};
 
 var Paddle = function (width, height) {
     this.pos = { x: 0, y: 0 };
@@ -18,10 +22,10 @@ var Ball = function (radius) {
  * Going to be a rough approximation, assuming ball is square
  */
 Ball.prototype.intersectsPaddle = function (paddle) {
-    return (!(this.pos.y + this.radius < paddle.pos.y || 
+    return (!(this.pos.y + this.radius < paddle.pos.y ||
         this.pos.y - this.radius > paddle.pos.y + paddle.height ||
         this.pos.x + this.radius < paddle.pos.x ||
-        this.pos.x - this.radius > paddle.pos.x + paddle.width))
+        this.pos.x - this.radius > paddle.pos.x + paddle.width));
 };
 
 /*********** CONSTANTS ********/
@@ -133,7 +137,7 @@ Game.sendMove = function (paddleRole, direction) {
         direction: direction,
         paddlePos: Game.paddles[paddleRole].pos
     };
-    Game.socket.emit("PLAYER_MOVE", data)
+    Game.socket.emit("PLAYER_MOVE", data);
 };
 
 Game.movePaddle = function (role, dy) {
@@ -259,9 +263,9 @@ Game.drawPause = function () {
 
     context.fillStyle = "#A19D9E";
     context.fillRect(xMiddle - pauseWidth - distanceApart / 2, yMiddle - pauseHeight / 2,
-            pauseWidth, pauseHeight);
+        pauseWidth, pauseHeight);
     context.fillRect(xMiddle + distanceApart / 2, yMiddle - pauseHeight / 2,
-            pauseWidth, pauseHeight);
+        pauseWidth, pauseHeight);
 };
 
 Game.checkBallCollisions = function (ball, now) {
@@ -374,10 +378,12 @@ $(function () {
     Game.socket = io.connect(window.location.origin);
     Game.socket.on("connect", function () {
         console.log("Connection established");
-        Game.socket.emit("join", { "room": String(Game.id) })
+        Game.socket.emit("join", {
+            "room": String(Game.id)
+        });
     });
 
-    Game.socket.on("GAME_READY", function (data) {
+    Game.socket.on("GAME_READY", function () {
         Game.sendPlayerRoleMessage();
     });
 
