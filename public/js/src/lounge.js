@@ -1,4 +1,4 @@
-/* global $, Vue */
+/* global $, Vue, parseArgs */
 /* exported Lounge */
 
 // JQuery used only for requests
@@ -126,9 +126,8 @@ const Lounge = new Vue({
         }
     },
     created: function() {
-
         const args = parseArgs();
-        if (! args.hasOwnProperty("username")) {
+        if (!args.username) {
             window.location.href = "/";
         }
         console.log(`set username = ${args.username}`);
