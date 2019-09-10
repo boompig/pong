@@ -1,0 +1,11 @@
+main {
+    margin-top: 1rem;
+}
+
+#error-msg {
+    color: red;
+}
+
+form {
+    max-width: 600px;
+}

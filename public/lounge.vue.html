@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <title>Pong | Lounge</title>
+
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha256-YLGeXaapI0/5IgZopewRJcFXomhRMlYYjugPLSyNjTY=" crossorigin="anonymous" />
+        <link rel="stylesheet" href="/css/src/lounge.css" />
+    </head>
+    <body>
+        <main id="root" v-cloak>
+            <h2>Logged in as <span class="username">{{ username }}</span></h2>
+
+            <div class="error" v-if="errorMsg">{{ errorMsg }}</div>
+
+            <p>Click on any username below to challenge them to a game</p>
+
+            <ul id="user-container">
+                <p v-if="loggedInUsers.length === 1">
+                    No one else is here...
+                </p>
+                <div v-if="loggedInUsers.length > 1">
+                    <li class="opponent" v-for="user in loggedInUsers"
+                        v-if="user !== username">
+                        <a href="#" v-on:click="() => issueChallenge(user)">{{ user }}</a>
+                    </li>
+                </div>
+            </ul>
+        </main>
+
+        <script
+			  src="https://code.jquery.com/jquery-3.4.1.min.js"
+			  integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+              crossorigin="anonymous"></script>
+        <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+        <script src="/js/src/utils.js"></script>
+        <script src="/js/src/lounge.js"></script>
+    </body>
+</html>

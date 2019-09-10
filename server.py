@@ -1,13 +1,18 @@
 from challenge import Challenge
 from flask import Flask, request, jsonify, redirect, url_for
-from flask.ext.socketio import SocketIO, send, emit, join_room, leave_room
+from flask_socketio import SocketIO, send, emit, join_room, leave_room
 import random
 import time
 import threading
+import logging
+import coloredlogs
+
 
 ########### create app ####################
-app = Flask(__name__, static_url_path="", static_folder="static")
+app = Flask(__name__, static_url_path="", static_folder="public")
 app.config["SECRET_KEY"] = "secret!"
+app.config["PORT"] = 8080
+app.config["DEBUG"] = True
 app.debug = True
 socketio = SocketIO(app)
 
@@ -22,20 +27,21 @@ challenges = {
 timeout_period = 10.0
 
 def check_keepalive_users(timer=None):
-    print "Purging usernames"
+    logging.info("Running username cleanup")
     now = time.time()
     deleted_users = []
-    for username, obj in available_users.iteritems():
+    for username, obj in available_users.items():
         if now - obj["last_keepalive"] > timeout_period:
             # remove that user
             deleted_users.append(username)
 
     for username in deleted_users:
-        print "Removing username " + username
+        logging.warning("Removing username " + username)
         del available_users[username]
 
-    timer = threading.Timer(timeout_period, check_keepalive_users)
-    timer.start()
+    if timer is None:
+        timer = threading.Timer(timeout_period, check_keepalive_users)
+        timer.start()
 
 def get_challenge_id():
     n = random.randint(100, 1000)
@@ -50,19 +56,23 @@ games = {}
 @socketio.on("join")
 def on_join(data):
     room = data["room"]
+    username = data["username"]
     join_room(room)
-    print "someone joined room" + str(data["room"])
+    print("{username} joined room {room}".format(
+        username=username,
+        room=room
+    ))
     if room not in games:
         games[room] = 1
     else:
-        print "all players have joined in room " + room
+        print("all players have joined in room " + room)
         emit("GAME_READY", "OK", room=room)
 
 @socketio.on("PLAYER_ROLE")
 def on_player_role(data):
     room = data["room"]
     emit("PLAYER_ROLE", data, room=room)
-    print "sending random number " + str(data["randomNumber"])
+    print("sending random number " + str(data["randomNumber"]))
 
 @socketio.on("PLAYER_MOVE")
 def on_player_move(data):
@@ -92,7 +102,7 @@ def html_register():
 
 @app.route("/lounge")
 def html_lounge():
-    return app.send_static_file("lounge.html")
+    return app.send_static_file("lounge.vue.html")
 
 @app.route("/waitingRoom")
 def html_waiting_room():
@@ -138,7 +148,7 @@ def api_keepalive():
 
 @app.route("/api/availableUsers", methods=["GET"])
 def api_availableUsers():
-    users = available_users.keys() 
+    users = list(available_users.keys())
     return jsonify({ "users": users })
 
 @app.route("/api/challenges", methods=["POST"])
@@ -157,7 +167,7 @@ def api_post_challenge():
         code = 400
     else:
         opponent = request.form["opponent"]
-        if len([ c for id, c in challenges.iteritems() if c.receive_username == opponent]) > 0:
+        if len([ c for id, c in challenges.items() if c.receive_username == opponent]) > 0:
             data = {"error": "OPPONENT_NOT_AVAILABLE"}
             code = 400
         else:
@@ -167,7 +177,10 @@ def api_post_challenge():
             challenge = Challenge(request.form["username"], opponent, time.time())
             challenges[challenge_id] = challenge
             code = 200
-            data = {"challengeID": challenge_id, "msg": "Successfully issued challenge to %s" % opponent}
+            data = {
+                "challengeID": challenge_id,
+                "msg": "Successfully issued challenge to %s" % opponent
+            }
     return jsonify(data), code
 
 @app.route("/api/challenges", methods=["GET"])
@@ -181,8 +194,13 @@ def api_get_challenges():
     else:
         l = []
         username = request.args["username"]
-        for challenge in [ c for id, c in challenges.iteritems() if c.receive_username == username ]:
-            l.append({ "username": challenge.sent_username, "id": id })
+        for challenge_id, challenge in challenges.items():
+            if challenge.receive_username == username and challenge.status == "pending":
+                l.append({
+                    "sent_username": challenge.sent_username,
+                    "id": challenge_id,
+                    "status": challenge.status
+                })
         data = {"challenges": l}
         code = 200
     return jsonify(data), code
@@ -221,5 +239,9 @@ def api_get_challenge_status(challengeID):
     return jsonify(data), code
 
 if __name__ == "__main__":
-    #check_keepalive_users()
-    socketio.run(app, host="0.0.0.0")
+    if app.config["DEBUG"]:
+        logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+        coloredlogs.install(logging.INFO)
+    check_keepalive_users()
+    print("Running on http://localhost:%s" % app.config["PORT"])
+    socketio.run(app, host="0.0.0.0", port=app.config["PORT"])
