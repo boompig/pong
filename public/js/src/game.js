@@ -26,13 +26,14 @@ Ball.prototype.intersectsPaddle = function (paddle) {
         this.pos.x - this.radius > paddle.pos.x + paddle.width));
 };
 
+const PADDLE_WIDTH = 8;
+const PADDLE_HEIGHT = 60;
+const BALL_RADIUS = 10;
+
 const Game = {
     /*********** CONSTANTS ********/
     borderWidth: 4,
     borderColor: "#F7C76D",
-    paddleWidth: 8,
-    paddleHeight: 60,
-    ballRadius: 10,
     paddleOffset: 10,
     // speed in pixels per second
     initBallSpeed: { x: 140.0, y: 70.0 },
@@ -74,20 +75,20 @@ const Game = {
     },
     lastDraw: null,
     paddles: {
-        left: new Paddle(Game.paddleWidth, Game.paddleHeight),
-        right: new Paddle(Game.paddleWidth, Game.paddleHeight)
+        left: new Paddle(PADDLE_WIDTH, PADDLE_HEIGHT),
+        right: new Paddle(PADDLE_WIDTH, PADDLE_HEIGHT)
     },
-    ball: new Ball(Game.ballRadius),
+    ball: new Ball(BALL_RADIUS),
 };
 
 /****************** GAME METHODS *************************/
 
 Game.checkHorizontalBoundaries = function () {
-    if (Game.ball.pos.x + Game.ballRadius <= 0) {
+    if (Game.ball.pos.x + BALL_RADIUS <= 0) {
         Game.scores.right++;
         Game.drawScores();
         Game.reset(Game.playerID);
-    } else if (Game.ball.pos.x - Game.ballRadius >= Game.canvas.width) {
+    } else if (Game.ball.pos.x - BALL_RADIUS >= Game.canvas.width) {
         Game.scores.left++;
         Game.drawScores();
         Game.reset(Game.playerID);
@@ -183,7 +184,7 @@ Game.drawBall = function () {
     var context = Game.context;
     context.beginPath();
     context.fillStyle = "white";
-    context.arc(Game.ball.pos.x, Game.ball.pos.y, Game.ballRadius, 0, 2 * Math.PI, false);
+    context.arc(Game.ball.pos.x, Game.ball.pos.y, BALL_RADIUS, 0, 2 * Math.PI, false);
     context.fill();
     context.closePath();
 };
@@ -195,7 +196,7 @@ Game.drawPaddles = function () {
         var role = roles[i];
         var paddle = Game.paddles[role];
         context.fillStyle = Game.role === role ? "#379E3E" : "white";
-        context.fillRect(paddle.pos.x, paddle.pos.y, Game.paddleWidth, Game.paddleHeight);
+        context.fillRect(paddle.pos.x, paddle.pos.y, PADDLE_WIDTH, PADDLE_HEIGHT);
     }
 };
 
@@ -332,9 +333,9 @@ Game.reset = function (playerID) {
 
     // reset pad position
     Game.paddles.left.pos.x = Game.paddleOffset;
-    Game.paddles.left.pos.y = Game.canvas.height / 2 - Game.paddleHeight / 2;
-    Game.paddles.right.pos.x = Game.canvas.width - Game.paddleOffset - Game.paddleWidth;
-    Game.paddles.right.pos.y = Game.canvas.height / 2 - Game.paddleHeight / 2;
+    Game.paddles.left.pos.y = Game.canvas.height / 2 - PADDLE_HEIGHT / 2;
+    Game.paddles.right.pos.x = Game.canvas.width - Game.paddleOffset - PADDLE_WIDTH;
+    Game.paddles.right.pos.y = Game.canvas.height / 2 - PADDLE_HEIGHT / 2;
 
     // reset pad speed
     Game.paddles.left.speed = { x: 0, y: 0 };
