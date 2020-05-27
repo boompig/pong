@@ -32,7 +32,7 @@ const Lounge = new Vue({
         },
 
         fetchChallenges: function () {
-            console.log("fetching challenges")
+            console.log("fetching challenges");
             $.getJSON("/api/challenges", {"username": this.username})
                 .then((response) => {
                     this.challenges = response.challenges;
@@ -60,7 +60,7 @@ const Lounge = new Vue({
                 dataType: "json",
             }).then((response) => {
                 console.log(response);
-                const url = new URL(`/waitingRoom`, window.location.origin);
+                const url = new URL("/waitingRoom", window.location.origin);
                 url.searchParams.set("username", this.username);
                 url.searchParams.set("challengeID", response.challengeID);
                 window.location.href = url.toString();
